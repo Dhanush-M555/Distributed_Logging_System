@@ -44,9 +44,9 @@ Effective log management is crucial for operational excellence in a microservice
 
 **Tasks:**
 
-- [ ] Configure the log accumulator to collect and structure logs.
-- [ ] Set up the Pub-Sub model (Apache Kafka) for log management.
-- [ ] Configure the subscriber to ensure seamless log consumption.
+- [X] Configure the log accumulator to collect and structure logs.
+- [X] Set up the Pub-Sub model (Apache Kafka) for log management.
+- [X] Configure the subscriber to ensure seamless log consumption.
 
 ---
 
@@ -55,7 +55,7 @@ Effective log management is crucial for operational excellence in a microservice
 **Tasks:**
 
 - [ ] Implement the alerting system for critical logs (ERROR, WARN).
-- [ ] Configure log storage using Elasticsearch.
+- [X] Configure log storage using Elasticsearch.
 - [ ] Conduct final testing and validation of the complete pipeline.
 
 ---

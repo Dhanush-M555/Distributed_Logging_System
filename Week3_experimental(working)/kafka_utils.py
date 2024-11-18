@@ -1,14 +1,16 @@
+# kafka_utils.py
 from kafka import KafkaProducer, KafkaConsumer
 import json
 from datetime import datetime
 import threading
+from typing import Callable, Optional
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(_name_)
+logger = logging.getLogger(__name__)
 
 class KafkaWrapper:
-    def _init_(self, bootstrap_servers='localhost:9092'):
+    def __init__(self, bootstrap_servers: str = 'localhost:9092'):
         self.bootstrap_servers = bootstrap_servers
         self.producer = None
         self.consumer = None
@@ -17,7 +19,7 @@ class KafkaWrapper:
     def _setup_producer(self):
         try:
             self.producer = KafkaProducer(
-                bootstrap_servers=[self.bootstrap_servers],
+                bootstrap_servers=self.bootstrap_servers,
                 value_serializer=lambda v: json.dumps(v).encode('utf-8')
             )
             logger.info("Kafka producer initialized successfully")
@@ -29,17 +31,18 @@ class KafkaWrapper:
         try:
             future = self.producer.send(topic, value=message)
             future.get(timeout=10)  # Wait for message to be sent
-            logger.info(f"Message sent to topic {topic}: {message}")
+            logger.debug(f"Message sent to topic {topic}: {message}")
         except Exception as e:
             logger.error(f"Failed to send message to Kafka: {e}")
             raise
 
-    def start_consumer(self, topic: str, message_handler, group_id=None):
+    def start_consumer(self, topic: str, message_handler: Callable, 
+                      group_id: Optional[str] = None):
         def consume():
             try:
                 self.consumer = KafkaConsumer(
                     topic,
-                    bootstrap_servers=[self.bootstrap_servers],
+                    bootstrap_servers=self.bootstrap_servers,
                     group_id=group_id or f'group-{datetime.now().timestamp()}',
                     value_deserializer=lambda m: json.loads(m.decode('utf-8')),
                     auto_offset_reset='latest'

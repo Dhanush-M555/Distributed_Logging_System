@@ -1,8 +1,8 @@
-# log_consumer.py
 from kafka_utils import KafkaWrapper
-import logging
-from colorama import Fore, Style, init
 from datetime import datetime
+from elasticsearch import Elasticsearch
+from colorama import Fore, Style, init
+import logging
 
 # Initialize colorama and logging
 init(autoreset=True)
@@ -10,16 +10,36 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class LogConsumer:
-    def __init__(self):
+    def __init__(self, es_host='localhost', es_port=9200):
         self.kafka = KafkaWrapper()
-        
+        self.es = Elasticsearch([{'host': es_host, 'port': es_port, 'scheme': 'http'}])  # Added scheme
+
+        # Ensure the Elasticsearch index exists
+        self.log_index = "microservice_logs"
+        if not self.es.indices.exists(index=self.log_index):
+            self.es.indices.create(index=self.log_index)
+            logger.info(f"Created Elasticsearch index: {self.log_index}")
+
     def format_timestamp(self, timestamp_str):
         """Format ISO timestamp to a more readable format"""
         try:
             dt = datetime.fromisoformat(timestamp_str)
             return dt.strftime("%Y-%m-%d %H:%M:%S")
-        except:
+        except Exception as e:
+            logger.warning(f"Invalid timestamp format: {timestamp_str} - {e}")
             return timestamp_str
+
+    def store_log(self, message):
+        """Store log message in Elasticsearch"""
+        try:
+            self.es.index(index=self.log_index, document=message)
+            logger.info(f"Log stored in Elasticsearch: {message}")
+        except Exception as e:
+            logger.error(f"Failed to store log in Elasticsearch: {e}")
+
+    def handle_alert(self, message, level_color):
+        """Display alerts for WARN and ERROR logs"""
+        print(f"{level_color}[ALERT] {message}{Style.RESET_ALL}")
 
     def handle_log(self, message):
         """Handle incoming log messages"""
@@ -32,9 +52,13 @@ class LogConsumer:
         
         timestamp = self.format_timestamp(message.get('timestamp', ''))
         service_name = message.get('service_name', 'Unknown')
-        node_id = message.get('node_id', 'Unknown')[:8]  # Show first 8 chars of node_id
+        node_id = message.get('node_id', 'Unknown')[:8]
         msg = message.get('message', '')
-        
+
+        # Alert for WARN and ERROR logs
+        if log_level in ('WARN', 'ERROR'):
+            self.handle_alert(message, color)
+
         # Add extra details for WARN and ERROR logs
         extra_info = ""
         if log_level == 'WARN':
@@ -49,33 +73,16 @@ class LogConsumer:
                 error_msg = error_details.get('error_message', '')
                 extra_info = f" [Code: {error_code}, Details: {error_msg}]"
 
+        # Print log to terminal
         print(f"{color}[{timestamp}] [{log_level}] {service_name} ({node_id}): {msg}{extra_info}{Style.RESET_ALL}")
         
-    def handle_heartbeat(self, message):
-        """Handle incoming heartbeat messages"""
-        timestamp = self.format_timestamp(message.get('timestamp', ''))
-        service_name = message.get('service_name', 'Unknown')
-        node_id = message.get('node_id', 'Unknown')[:8]
-        status = message.get('status', 'UNKNOWN')
-        
-        color = Fore.GREEN if status == 'UP' else Fore.RED
-        print(f"{color}[{timestamp}] [HEARTBEAT] {service_name} ({node_id}): Status: {status}{Style.RESET_ALL}")
-        
-    def handle_registration(self, message):
-        """Handle incoming registration messages"""
-        timestamp = self.format_timestamp(message.get('timestamp', ''))
-        service_name = message.get('service_name', 'Unknown')
-        node_id = message.get('node_id', 'Unknown')[:8]
-        
-        print(f"{Fore.MAGENTA}[{timestamp}] [REGISTRATION] New service registered: {service_name} ({node_id}){Style.RESET_ALL}")
-    
+        # Store log in Elasticsearch
+        self.store_log(message)
+
     def start(self):
-        """Start consuming messages from all topics"""
+        """Start consuming messages from the Kafka topic"""
         self.kafka.start_consumer('microservice_logs', self.handle_log, 'log-consumer')
-        self.kafka.start_consumer('microservice_heartbeats', self.handle_heartbeat, 'heartbeat-consumer')
-        self.kafka.start_consumer('microservice_registration', self.handle_registration, 'registration-consumer')
-        
-        logger.info("Started consuming messages from all topics")
+        logger.info("Started consuming messages from 'microservice_logs' topic")
         
         # Keep the main thread running
         try:
@@ -89,4 +96,3 @@ if __name__ == "__main__":
     consumer = LogConsumer()
     consumer.start()
 
-    
