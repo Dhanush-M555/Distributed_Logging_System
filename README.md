@@ -20,46 +20,6 @@ Effective log management is crucial for operational excellence in a microservice
 
 ---
 
-## Weekly Commit Milestones
-
-### Week 1: Microservice and Log Generation Setup
-
-**Completed Tasks:**  
-*(Tick the boxes below to indicate completion.)*
-
-- [x] Created 3 independent microservices:
-  - PaymentService
-  - OrderService
-  - InventoryService
-- [x] Implemented log generation for each microservice.
-- [x] Added a heartbeat mechanism for periodic status updates.
-- [x] Implemented log message color coding for clarity.
-
-**Next Steps:**
-- [x] Create a trigger for missing heartbeats once the Pub-Sub model is implemented.
-
----
-
-### Week 2: Log Accumulator and Pub-Sub Model Integration
-
-**Tasks:**
-
-- [X] Configure the log accumulator to collect and structure logs.
-- [X] Set up the Pub-Sub model (Apache Kafka) for log management.
-- [X] Configure the subscriber to ensure seamless log consumption.
-
----
-
-### Week 3: Alerting, Log Storage, and Final Integration
-
-**Tasks:**
-
-- [x] Implement the alerting system for critical logs (ERROR, WARN).
-- [X] Configure log storage using Elasticsearch.
-- [x] Conduct final testing and validation of the complete pipeline.
-
----
-
 ## Tools & Technologies
 
 - **Programming Language:** Python
