@@ -36,7 +36,7 @@ Effective log management is crucial for operational excellence in a microservice
 - [x] Implemented log message color coding for clarity.
 
 **Next Steps:**
-- [ ] Create a trigger for missing heartbeats once the Pub-Sub model is implemented.
+- [x] Create a trigger for missing heartbeats once the Pub-Sub model is implemented.
 
 ---
 
@@ -54,19 +54,19 @@ Effective log management is crucial for operational excellence in a microservice
 
 **Tasks:**
 
-- [ ] Implement the alerting system for critical logs (ERROR, WARN).
+- [x] Implement the alerting system for critical logs (ERROR, WARN).
 - [X] Configure log storage using Elasticsearch.
-- [ ] Conduct final testing and validation of the complete pipeline.
+- [x] Conduct final testing and validation of the complete pipeline.
 
 ---
 
 ## Tools & Technologies
 
 - **Programming Language:** Python
-- **Log Accumulator:** Fluentd or Apache Flume
+- **Log Accumulator:** Fluentd 
 - **Pub-Sub Model:** Apache Kafka
 - **Log Storage:** Elasticsearch
-- **Visualization (Optional):** Kibana
+- **Visualization:** Kibana
 
 ---
 
