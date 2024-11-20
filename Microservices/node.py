@@ -1,4 +1,3 @@
-# node.py
 import uuid
 import time
 import threading
@@ -9,25 +8,21 @@ from colorama import Fore, Style, init
 from threading import Lock
 from fluent import sender
 from kafka_utils import KafkaWrapper
+from config import Config
 
-# Initialize colorama for colored terminal output
 init(autoreset=True)
-
-# Global lock for synchronized printing
 print_lock = Lock()
 
 class Node:
-    # Colors for message types
     message_colors = {
         "registration": Fore.CYAN,
         "heartbeat": Fore.RED,
         "Log": Fore.GREEN
     }
-    # Colors for keys and values within messages
     key_color = Fore.LIGHTMAGENTA_EX
     value_color = Fore.LIGHTYELLOW_EX
 
-    def __init__(self, service_name):
+    def __init__(self, service_name, kafka_bootstrap_servers=Config.KAFKA_BOOTSTRAP_SERVERS):
         self.node_id = str(uuid.uuid4())
         self.service_name = service_name
         self.status = "UP"
@@ -35,13 +30,13 @@ class Node:
         # Initialize Fluentd sender
         self.fluent_sender = sender.FluentSender(
             'microservice',
-            host='localhost',
-            port=24224
+            host=Config.FLUENTD_HOST,
+            port=Config.FLUENTD_PORT
         )
         
         # Initialize Kafka wrapper
-        self.kafka = KafkaWrapper()
-        
+        self.kafka = KafkaWrapper(bootstrap_servers=Config.KAFKA_BOOTSTRAP_SERVERS)
+        self.registered=False
         self.register_node()
     
     def format_message(self, message):
@@ -74,17 +69,17 @@ class Node:
             print(f"Error sending to Kafka: {e}")
     
     def register_node(self):
-        registration_message = {
-            "node_id": self.node_id,
-            "message_type": "REGISTRATION",
-            "service_name": self.service_name,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # Send to both console and message brokers
-        self.print_message("registration", json.dumps(registration_message))
-        self.send_to_fluentd('registration', registration_message)
-        self.send_to_kafka('microservice_registration', registration_message)
+        if not self.registered:
+            registration_message = {
+                "node_id": self.node_id,
+                "message_type": "registration",
+                "service_name": self.service_name,
+                "timestamp": datetime.now().isoformat()
+            }
+            self.print_message("registration", json.dumps(registration_message))
+            self.send_to_kafka('microservice_registration', registration_message)
+            self.registered = True
+
     
     def generate_log(self, log_level, message, extra_data=None):
         log_message = {
